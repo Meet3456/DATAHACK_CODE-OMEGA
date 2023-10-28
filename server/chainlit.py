@@ -14,6 +14,7 @@ from langchain.prompts import PromptTemplate
 from langchain.llms import HuggingFaceHub
 from io import BytesIO
 import openai
+import numpy as np
 from langchain.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -22,7 +23,7 @@ from langchain.prompts import (
 import chainlit as cl
 
 system_message_prompt = SystemMessagePromptTemplate.from_template(
-"In want you to act as a law agent, understanding all laws and related jargon, and explaining them in a simpler and descriptive way. Return a list of all the related laws drafted for the user_input question and provide proper penal codes if applicable from the ingested PDF, and explain the process and terms in a simpler way. The context is:\n{context}"
+    "In want you to act as a law agent, understanding all laws and related jargon, and explaining them in a simpler and descriptive way. Return a list of all the related laws drafted for the user_input question and provide proper penal codes if applicable from the ingested PDF, and explain the process and terms in a simpler way. Dont go beyond the context of the pdf please be precise and accurate. The context is:\n{context}"
 )
 human_message_prompt = HumanMessagePromptTemplate.from_template(
     "{question}"
@@ -30,8 +31,8 @@ human_message_prompt = HumanMessagePromptTemplate.from_template(
 
 
 def get_text_from_pdf(pdf):
-    print("inside pdf") 
-    ## empty string(variable) to store all the text:
+    print("inside pdf")
+    # empty string(variable) to store all the text:
     pdf_file_object = BytesIO(pdf.content)
     # Create a PdfFileReader object
     pdf = PdfReader(pdf_file_object)
@@ -44,65 +45,71 @@ def get_text_from_pdf(pdf):
 
     return pdf_text
 
+
 def get_text_chunks_raw(text):
     print("inside chunks")
-    ## LANGCHAIN TEXT SPLITTER:
+    # LANGCHAIN TEXT SPLITTER:
     text_splitter = CharacterTextSplitter(
         separator="\n",
-        ## MAX CHUNK OF SIZE CREATED 1000
-        chunk_size = 1000,
-        ## IF SOME INFORMATION IS EXTRACTED AND MISSED BETWEEN 1000 CHUNKS WE MOVE BACK 200 WORDS(OVERLAP BACKWARDS)
-        chunk_overlap = 200,
-        length_function = len
+        # MAX CHUNK OF SIZE CREATED 1000
+        chunk_size=1000,
+        # IF SOME INFORMATION IS EXTRACTED AND MISSED BETWEEN 1000 CHUNKS WE MOVE BACK 200 WORDS(OVERLAP BACKWARDS)
+        chunk_overlap=200,
+        length_function=len
     )
 
     chunks = text_splitter.split_text(text)
     return chunks
 
+
 def store_vector_embeddings(get_text_chunks):
     print("inside embedding")
-    ## USING OPENAI EMBEDDINGS , WHICH CALLS THE OPENAI SERVERS -> FAST , DOSENT STORES ON LOCAL MACHINE
+    # USING OPENAI EMBEDDINGS , WHICH CALLS THE OPENAI SERVERS -> FAST , DOSENT STORES ON LOCAL MACHINE
     embeddings = OpenAIEmbeddings()
-    ## HUGGING FACE EMBEDDINGS , STORES THE EMBEDDINGS IN OUR LOCAL MACHINE -> SLOW BUT MORE ACCURATE
-    ## new_embeddings = HuggingFaceInstructEmbeddings(model_name = 'hkunlp/instructor-xl')
-    ## STORING THE  IN FAISS STORAGE
-    vectorstore = FAISS.from_texts(texts=get_text_chunks,embedding=embeddings)
+
+    # STORING THE  IN FAISS STORAGE
+    vectorstore = FAISS.from_texts(texts=get_text_chunks, embedding=embeddings)
+
     return vectorstore
+
 
 def get_conversation_chain(vectorstore):
     print("inside chaining")
     llm = ChatOpenAI(temperature=0)
-    memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
+    memory = ConversationBufferMemory(
+        memory_key='chat_history', return_messages=True)
     conversation_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
         retriever=vectorstore.as_retriever(),
         memory=memory,
-    combine_docs_chain_kwargs={
-        "prompt": ChatPromptTemplate.from_messages([
-            system_message_prompt,
-            human_message_prompt,
-        ]),
-    },
+        combine_docs_chain_kwargs={
+            "prompt": ChatPromptTemplate.from_messages([
+                system_message_prompt,
+                human_message_prompt,
+            ]),
+        },
     )
     return conversation_chain
+
 
 @cl.on_chat_start
 async def on_chat_start():
     print("inside main")
     files = None
-    # Wait for the user to upload a file
+    # # Wait for the user to upload a file
     while files == None:
         files = await cl.AskFileMessage(
             content="Please upload a text file to begin!", accept=["application/pdf"], timeout=180
         ).send()
-    # Decode the file
-    # text_file = files[0]
-    # print("Printing text: ",files)
+    # # Decode the file
+    text_file = files[0]
+    # # print("Printing text: ",files)
     get_raw_text = get_text_from_pdf(files[0])
-    ## CONVERT IT INTO SMALL CHUNKS by CALLING 'get_text_chunks_raw' -> TAKES INPUT THE RAW TEXT AND RETURNS CHUNKS OF IT:
+    # # CONVERT IT INTO SMALL CHUNKS by CALLING 'get_text_chunks_raw' -> TAKES INPUT THE RAW TEXT AND RETURNS CHUNKS OF IT:
     get_text_chunks = get_text_chunks_raw(get_raw_text)
-    ## CREATE EMBEDIINGS(REPRESENT CHUNKS INTO VECTOR) AND STORE IT IN DATABASE AS VECTORS:
+    # # CREATE EMBEDIINGS(REPRESENT CHUNKS INTO VECTOR) AND STORE IT IN DATABASE AS VECTORS:
     vectorstore = store_vector_embeddings(get_text_chunks)
+
     chain = get_conversation_chain(vectorstore)
     cl.user_session.set("chain", chain)
 
@@ -116,3 +123,6 @@ async def on_message(message: cl.Message):
     )
 
     await cl.Message(content=res).send()
+
+
+

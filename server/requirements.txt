@@ -20,3 +20,6 @@ faiss-cpu
 huggingface_hub
 InstructorEmbedding
 sentence_transformers
+tiktoken
+chainlit
+faiss
