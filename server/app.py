@@ -32,14 +32,9 @@ def registerpost():
         'username': data.get('username'),
         'email': data.get('email'),
         'password': data.get('password'),
-        # 'gender' : request.form.get('gender'),
-        # 'email' : request.form.get('emailAddress'),
-        # 'phone_number' : request.form.get('phoneNumber'),
-        # 'location' : request.form.get('phoneNumber'),
-        # 'password' : request.form.get('password'),
     }
     collection = MongoDB('users')
-    existing_user = collection.find_one({'username': new_record['username']})
+    existing_user = collection.find_one({'email': new_record['email']})
     if existing_user:
         response = {'message': 'exists'}
         return jsonify(response)
