@@ -10,6 +10,8 @@ InstructorEmbedding
 sentence_transformers
 tiktoken
 chainlit
+flask
+pymongo
 langdetect 
 fpdf 
 transformers 

@@ -4,6 +4,7 @@ from langchain.chains import LLMChain
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 # from PyPDF2 import PdfFileReader
+from pymongo import MongoClient
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings, HuggingFaceInstructEmbeddings
 from langchain.vectorstores import FAISS
@@ -24,6 +25,8 @@ import chainlit as cl
 from chainlit import user_session
 from typing import Optional
 import chainlit as cl
+import os
+
 
 
 system_message_prompt = SystemMessagePromptTemplate.from_template(
@@ -32,6 +35,15 @@ system_message_prompt = SystemMessagePromptTemplate.from_template(
 human_message_prompt = HumanMessagePromptTemplate.from_template(
     "{question}"
 )
+
+
+passw = os.getenv("MONGO_PASS")
+connection_string = f"mongodb+srv://codeomega:{passw}@cluster0.hnyk6mi.mongodb.net/?retryWrites=true&w=majority"
+def MongoDB(collection_name):
+    client = MongoClient(connection_string)
+    db = client.get_database('datahack')
+    collection = db.get_collection(collection_name)
+    return collection
 
 
 def get_text_from_pdf(pdf):
@@ -95,18 +107,23 @@ def get_conversation_chain(vectorstore):
     )
     return conversation_chain
 
-@cl.header_auth_callback
-def header_auth_callback(headers) -> Optional[cl.AppUser]:
-  # Verify the signature of a token in the header (ex: jwt token)
-  # or check that the value is matching a row from your database
-  if headers.get("test-header") == "test-value":
-    return cl.AppUser(username="admin", role="ADMIN", provider="header")
-  else:
-    return None
+@cl.password_auth_callback
+def auth_callback(username: str, password: str) -> Optional[cl.AppUser]:
+  # Fetch the user matching username from your database
+  # and compare the hashed password with the value stored in the database
+    collection_name = 'users'
+    collection = MongoDB(collection_name)
+    existing_user = collection.find_one({'email': username})
+    if existing_user:
+        if existing_user['password'] == password:
+            print(password) 
+            return cl.AppUser(username=username, role="USER", provider="credentials")
+        else:
+            return None
+
   
 @cl.on_chat_start
 async def on_chat_start():
-    app_user = cl.user_session.get("user")
     print("inside main")
     files = None
     # # Wait for the user to upload a file
@@ -114,8 +131,6 @@ async def on_chat_start():
         files = await cl.AskFileMessage(
             content="Please upload a text file to begin!", accept=["application/pdf"], timeout=180
         ).send()
-    # # Decode the file
-    text_file = files[0]
     # # print("Printing text: ",files)
     get_raw_text = get_text_from_pdf(files[0])
     # # CONVERT IT INTO SMALL CHUNKS by CALLING 'get_text_chunks_raw' -> TAKES INPUT THE RAW TEXT AND RETURNS CHUNKS OF IT:

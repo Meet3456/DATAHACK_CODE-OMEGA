@@ -1,20 +1,20 @@
 // SignupForm.js
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import "../index.css";
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
 
   const [errors, setErrors] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
 
   const handleChange = (e) => {
@@ -26,20 +26,27 @@ const SignUp = () => {
     // Clear the error message for the field being changed
     setErrors((prevErrors) => ({
       ...prevErrors,
-      [name]: '',
+      [name]: "",
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Simple validation
-    if (!formData.username || !formData.email || !formData.password || !formData.confirmPassword) {
+    if (
+      !formData.username ||
+      !formData.email ||
+      !formData.password ||
+      !formData.confirmPassword
+    ) {
       setErrors({
-        username: formData.username ? '' : 'Username is required',
-        email: formData.email ? '' : 'Email is required',
-        password: formData.password ? '' : 'Password is required',
-        confirmPassword: formData.confirmPassword ? '' : 'Confirm Password is required',
+        username: formData.username ? "" : "Username is required",
+        email: formData.email ? "" : "Email is required",
+        password: formData.password ? "" : "Password is required",
+        confirmPassword: formData.confirmPassword
+          ? ""
+          : "Confirm Password is required",
       });
       return; // Don't submit the form if there are errors
     }
@@ -47,87 +54,126 @@ const SignUp = () => {
     if (formData.password !== formData.confirmPassword) {
       setErrors({
         ...errors,
-        confirmPassword: 'Passwords do not match',
+        confirmPassword: "Passwords do not match",
       });
       return;
+    }
+
+    try {
+      const response = await fetch("/register-post", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      if (response.ok) {
+        // Handle success, e.g., show a success message to the user
+        console.log("User registered successfully!");
+        window.location.href = "/apps";
+      } else {
+        // Handle errors, e.g., show an error message to the user
+        console.error("Registration failed");
+      }
+    } catch (error) {
+      console.error("Error:", error);
     }
 
     // If all fields are filled and passwords match, you can proceed with your logic
     // For example, you can use formData.username, formData.email, formData.password
 
-    // Clear the form data after submission (optional)
-    setFormData({
-      username: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-    });
+    // // Clear the form data after submission (optional)
+    // setFormData({
+    //   username: '',
+    //   email: '',
+    //   password: '',
+    //   confirmPassword: '',
+    // });
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-50 dark:bg-gray-900">
-      <form className="w-96 bg-white p-8 rounded shadow-md">
-        <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Sign Up</h2>
-        <div className="mb-4">
-          <label htmlFor="username" className="block text-gray-900 text-sm font-semibold mb-2">
+    <div className='flex justify-center items-center h-screen bg-gray-50 dark:bg-gray-900'>
+      <form className='w-96 bg-white p-8 rounded shadow-md'>
+        <h2 className='text-2xl font-bold mb-6 text-gray-900 text-dark text-center'>
+          Sign Up
+        </h2>
+        <div className='mb-4'>
+          <label
+            htmlFor='username'
+            className='block text-gray-900 text-sm font-semibold mb-2'
+          >
             Username
           </label>
           <input
-            type="text"
-            id="username"
-            name="username"
+            type='text'
+            id='username'
+            name='username'
             value={formData.username}
             onChange={handleChange}
-            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:border-blue-600"
+            className='w-full px-4 py-2 border rounded-md focus:outline-none focus:border-blue-600'
           />
-          <p className="text-red-500 text-sm mt-1">{errors.username}</p>
+          <p className='text-red-500 text-sm mt-1'>{errors.username}</p>
         </div>
-        <div className="mb-4">
-          <label htmlFor="email" className="block text-gray-900 text-sm font-semibold mb-2">
+        <div className='mb-4'>
+          <label
+            htmlFor='email'
+            className='block text-gray-900 text-sm font-semibold mb-2'
+          >
             Email
           </label>
           <input
-            type="email"
-            id="email"
-            name="email"
+            type='email'
+            id='email'
+            name='email'
             value={formData.email}
             onChange={handleChange}
-            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:border-blue-600"
+            className='w-full px-4 py-2 border rounded-md focus:outline-none focus:border-blue-600'
           />
-          <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+          <p className='text-red-500 text-sm mt-1'>{errors.email}</p>
         </div>
-        <div className="mb-4">
-          <label htmlFor="password" className="block text-gray-900 text-sm font-semibold mb-2">
+        <div className='mb-4'>
+          <label
+            htmlFor='password'
+            className='block text-gray-900 text-sm font-semibold mb-2'
+          >
             Password
           </label>
           <input
-            type="password"
-            id="password"
-            name="password"
+            type='password'
+            id='password'
+            name='password'
             value={formData.password}
             onChange={handleChange}
-            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:border-blue-600"
+            className='w-full px-4 py-2 border rounded-md focus:outline-none focus:border-blue-600'
           />
-          <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+          <p className='text-red-500 text-sm mt-1'>{errors.password}</p>
         </div>
-        <div className="mb-6">
-          <label htmlFor="confirmPassword" className="block text-gray-900 text-sm font-semibold mb-2">
+        <div className='mb-6'>
+          <label
+            htmlFor='confirmPassword'
+            className='block text-gray-900 text-sm font-semibold mb-2'
+          >
             Confirm Password
           </label>
           <input
-            type="password"
-            id="confirmPassword"
-            name="confirmPassword"
+            type='password'
+            id='confirmPassword'
+            name='confirmPassword'
             value={formData.confirmPassword}
             onChange={handleChange}
-            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:border-blue-600"
+            className='w-full px-4 py-2 border rounded-md focus:outline-none focus:border-blue-600'
           />
-          <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
+          <p className='text-red-500 text-sm mt-1'>{errors.confirmPassword}</p>
         </div>
         <button
-          type="submit"
+          type='submit'
           onClick={handleSubmit}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:bg-blue-700"
+          className='w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:bg-blue-700'
         >
           Sign Up
         </button>
