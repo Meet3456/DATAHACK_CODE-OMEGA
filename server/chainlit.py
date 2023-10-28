@@ -41,7 +41,7 @@ passw = os.getenv("MONGO_PASS")
 connection_string = f"mongodb+srv://codeomega:{passw}@cluster0.hnyk6mi.mongodb.net/?retryWrites=true&w=majority"
 def MongoDB(collection_name):
     client = MongoClient(connection_string)
-    db = client.get_database('SIH')
+    db = client.get_database('datahack')
     collection = db.get_collection(collection_name)
     return collection
 
@@ -113,17 +113,17 @@ def auth_callback(username: str, password: str) -> Optional[cl.AppUser]:
   # and compare the hashed password with the value stored in the database
     collection_name = 'users'
     collection = MongoDB(collection_name)
-    existing_user = collection.find_one({'username': username})
+    existing_user = collection.find_one({'email': username})
     if existing_user:
         if existing_user['password'] == password:
-             return cl.AppUser(username="admin", role="ADMIN", provider="credentials")
+            print(password) 
+            return cl.AppUser(username=username, role="USER", provider="credentials")
         else:
             return None
 
   
 @cl.on_chat_start
 async def on_chat_start():
-    app_user = cl.user_session.get("user")
     print("inside main")
     files = None
     # # Wait for the user to upload a file
@@ -131,8 +131,6 @@ async def on_chat_start():
         files = await cl.AskFileMessage(
             content="Please upload a text file to begin!", accept=["application/pdf"], timeout=180
         ).send()
-    # # Decode the file
-    text_file = files[0]
     # # print("Printing text: ",files)
     get_raw_text = get_text_from_pdf(files[0])
     # # CONVERT IT INTO SMALL CHUNKS by CALLING 'get_text_chunks_raw' -> TAKES INPUT THE RAW TEXT AND RETURNS CHUNKS OF IT:
