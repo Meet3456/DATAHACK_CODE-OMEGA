@@ -120,7 +120,7 @@ def auth_callback(username: str, password: str) -> Optional[cl.AppUser]:
             return cl.AppUser(username=username, role="USER", provider="credentials")
         else:
             return None
-
+    return None
   
 @cl.on_chat_start
 async def on_chat_start():
