@@ -2,6 +2,95 @@ from flask import Flask, jsonify, request, session, url_for, redirect
 from dotenv import load_dotenv
 import os
 from pymongo import MongoClient
+import PyPDF2
+import torch
+from reportlab.pdfgen import canvas
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, GenerationConfig
+from PyPDF2 import PdfReader
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import Paragraph
+from fpdf import FPDF
+import textwrap
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, PageTemplate, BaseDocTemplate, Frame, PageBreak, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+from langdetect import detect
+
+device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
+def vedant_raita(in_pdf,out_pdf, device= device):
+    def extract_text_from_pdf(file_path):
+        reader = PdfReader(file_path)
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text()
+        language = detect(text)
+        return text, language
+
+    def translate_text(text, source_lang, target_lang= 'eng_Latn', device=device):
+        model = AutoModelForSeq2SeqLM.from_pretrained("facebook/nllb-200-distilled-600M")
+        model.to(device)
+        tokenizer = AutoTokenizer.from_pretrained("facebook/nllb-200-distilled-600M", src_lang = source_lang)
+        inputs = tokenizer(text, return_tensors="pt")
+        translated_tokens = model.generate(
+                inputs['input_ids'].to(device),
+                generation_config = GenerationConfig(max_new_tokens=200, num_beams=1)
+        )[0]
+        result = tokenizer.batch_decode(translated_tokens, skip_special_tokens=True)
+        print(result)
+        return result
+
+    def translate_pdf_to_english(file_path):
+        text, language = extract_text_from_pdf(file_path)
+        chunks = textwrap.wrap(text, width=1000)
+        translated_text = ""
+        for chunk in chunks:
+            ' '.join(translate_text(chunk, source_lang= language, target_lang = 'eng_Latn'))
+        return translated_text
+
+    def create_pdf(text, output_path):
+        pdf_filename = "output.pdf"
+
+        class MyDocTemplate(BaseDocTemplate):
+            def afterFlowable(self, flowable):
+                if isinstance(flowable, Paragraph):
+                    if flowable.getKeepWithNext():
+                        self.canv.restoreState()
+                        self.canv.showPage()
+                        self.handle_flowable(flowable)
+
+        doc = MyDocTemplate(pdf_filename, pagesize=letter)
+
+        frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='normal')
+        template = PageTemplate(id='test', frames=frame)
+        doc.addPageTemplates([template])
+
+        # Create a list of flowables (content elements)
+        story = []
+        styles = getSampleStyleSheet()
+        paragraphs = text.split('\n\n')
+
+        # Customize the font size
+        custom_style = styles["Normal"]
+        custom_style.fontName = 'Helvetica'
+        custom_style.fontSize = 12
+        custom_style.alignment = 0
+
+        for paragraph in paragraphs:
+            story.append(Paragraph(paragraph, custom_style))
+            story.append(PageBreak())
+
+        story.pop()
+
+        doc.build(story)
+        print(f"PDF saved as {pdf_filename}")
+
+
+    translated_text = translate_pdf_to_english(in_pdf)
+    create_pdf(translated_text, out_pdf)
 
 load_dotenv()
 
@@ -69,111 +158,6 @@ def loginpost():
     else:
         response = {'success': False}
         return jsonify(response)
-
-
-
-def vedant_raita(in_pdf,out_pdf):
-    #========================DO NOT CHANGE==========================
-    import PyPDF2
-    from reportlab.pdfgen import canvas
-    from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-
-    from PyPDF2 import PdfReader
-
-    from reportlab.lib.pagesizes import letter
-    from reportlab.pdfgen import canvas
-    from reportlab.lib.styles import getSampleStyleSheet
-    from reportlab.platypus import Paragraph
-    from fpdf import FPDF
-    import textwrap
-
-    from reportlab.lib.pagesizes import letter
-    from reportlab.platypus import SimpleDocTemplate, PageTemplate, BaseDocTemplate, Frame, PageBreak, Paragraph
-    from reportlab.lib.styles import getSampleStyleSheet
-    from reportlab.lib import colors
-    from langdetect import detect
-
-    def extract_text_from_pdf(file_path):
-        reader = PdfReader(file_path)
-        text = ""
-        for page in reader.pages:
-            text += page.extract_text()
-        code=detect(text)
-        print(code)
-
-        # d={'fr':'fra_Latn',}
-
-
-        return text,code
-
-    def translate_text(text, source_lang, target_lang= 'eng_Latn'):
-        tokenizer = AutoTokenizer.from_pretrained("facebook/nllb-200-distilled-600M", src_lang = source_lang)
-        model = AutoModelForSeq2SeqLM.from_pretrained("facebook/nllb-200-distilled-600M")
-        inputs = tokenizer(text, return_tensors="pt")
-        translated_tokens = model.generate(
-            inputs['input_ids'], forced_bos_token_id=tokenizer.lang_code_to_id[target_lang], max_length=1024
-        )
-        result = tokenizer.batch_decode(translated_tokens, skip_special_tokens=True)[0]
-        print(result)
-        return result
-
-    def translate_pdf_to_english(file_path):
-        text,code = extract_text_from_pdf(file_path)
-        # Split the text into chunks of approximately 1000 characters
-        chunks = textwrap.wrap(text, width=1000)
-        translated_text = ""
-        for chunk in chunks:
-            translated_text += translate_text(chunk,code)
-        return translated_text
-
-    def create_pdf(text, output_path):
-        pdf_filename = "output.pdf"
-
-        class MyDocTemplate(BaseDocTemplate):
-            def afterFlowable(self, flowable):
-                if isinstance(flowable, Paragraph):
-                    if flowable.getKeepWithNext():
-                        self.canv.restoreState()
-                        self.canv.showPage()
-                        self.handle_flowable(flowable)
-
-        doc = MyDocTemplate(pdf_filename, pagesize=letter)
-
-        frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='normal')
-        template = PageTemplate(id='test', frames=frame)
-        doc.addPageTemplates([template])
-
-        # Create a list of flowables (content elements)
-        story = []
-        styles = getSampleStyleSheet()
-        paragraphs = text.split('\n\n')
-
-        # Customize the font size
-        custom_style = styles["Normal"]
-        custom_style.fontName = 'Helvetica'
-        custom_style.fontSize = 12 # Set the font size here
-        custom_style.alignment = 0 
-
-        for paragraph in paragraphs:
-            story.append(Paragraph(paragraph, custom_style))
-            story.append(PageBreak())
-
-        # Remove the page break after the last paragraph
-        story.pop()
-
-        # Build the PDF
-        doc.build(story)
-        print(f"PDF saved as {pdf_filename}")
-
-
-    translated_text = translate_pdf_to_english(in_pdf)
-    create_pdf(translated_text, out_pdf)
-    #++++++++++++++++++++++++++++DO NOT CHANGE+++++++++++++++++++++++++++++
-
-
-
-
-
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
