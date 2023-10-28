@@ -3,6 +3,8 @@ import Apps from "./views/Apps";
 import Chat from "./views/chat";
 import Login from "./views/Login";
 import SignUp from "./views/SignUp";
+import Trans from "./views/Trans";
+
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 function App() {
   return (
@@ -14,6 +16,7 @@ function App() {
           <Route path='/chat' element={<Chat />} />
           <Route path='/login' element={<Login />} />
           <Route path='/signup' element={<SignUp />} />
+          <Route path='/trans' element={<Trans />} />
         </Routes>
       </BrowserRouter>
     </>
