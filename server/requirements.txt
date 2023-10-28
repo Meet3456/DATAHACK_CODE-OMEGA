@@ -12,3 +12,11 @@ tiktoken
 chainlit
 flask
 pymongo
+langdetect 
+fpdf 
+transformers 
+huggingface 
+pypdf2 
+pdfminer.six 
+PyMuPDF
+reportlab==3.5.68
