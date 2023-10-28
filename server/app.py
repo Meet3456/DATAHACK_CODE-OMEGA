@@ -21,7 +21,7 @@ from langdetect import detect
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-def vedant_raita(in_pdf,out_pdf, device= device):
+def translate(in_pdf,out_pdf,lang, device= device):
     def extract_text_from_pdf(file_path):
         reader = PdfReader(file_path)
         text = ""
@@ -30,7 +30,7 @@ def vedant_raita(in_pdf,out_pdf, device= device):
         language = detect(text)
         return text, language
 
-    def translate_text(text, source_lang, target_lang= 'eng_Latn', device=device):
+    def translate_text(text, source_lang, target_lang= lang, device=device):
         model = AutoModelForSeq2SeqLM.from_pretrained("facebook/nllb-200-distilled-600M")
         model.to(device)
         tokenizer = AutoTokenizer.from_pretrained("facebook/nllb-200-distilled-600M", src_lang = source_lang)
@@ -158,6 +158,17 @@ def loginpost():
     else:
         response = {'success': False}
         return jsonify(response)
+
+@app.route('/translate', methods=['POST'])
+def translatepost():
+    pdf_file = request.files['pdf_file']
+    if pdf_file:
+        upload_path = os.path.join(app.root_path, 'uploads')
+        os.makedirs(upload_path, exist_ok=True)  # Create the directory if it doesn't exist
+        filename = os.path.join(upload_path, pdf_file.filename)
+        pdf_file.save(filename)
+        return 'File saved successfully', 200
+    return 'No file uploaded', 400
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
