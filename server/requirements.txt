@@ -1,17 +1,5 @@
-# flask
-# python-dotenv
-# openai
-# langchain
-# pandas
-# numpy
-
-# pypdf2 
-# docx2txt 
-# faiss-cpu 
-# tiktoken
-
-# pymongo
-
+tiktoken
+chainlit
 pypdf2
 langchain
 python-dotenv

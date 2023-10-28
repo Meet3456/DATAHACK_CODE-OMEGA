@@ -20,6 +20,10 @@ from langchain.prompts import (
     SystemMessagePromptTemplate,
 )
 import chainlit as cl
+from chainlit import user_session
+from typing import Optional
+import chainlit as cl
+
 
 system_message_prompt = SystemMessagePromptTemplate.from_template(
 "In want you to act as a law agent, understanding all laws and related jargon, and explaining them in a simpler and descriptive way. Return a list of all the related laws drafted for the user_input question and provide proper penal codes if applicable from the ingested PDF, and explain the process and terms in a simpler way. The context is:\n{context}"
@@ -86,8 +90,18 @@ def get_conversation_chain(vectorstore):
     )
     return conversation_chain
 
+@cl.header_auth_callback
+def header_auth_callback(headers) -> Optional[cl.AppUser]:
+  # Verify the signature of a token in the header (ex: jwt token)
+  # or check that the value is matching a row from your database
+  if headers.get("test-header") == "test-value":
+    return cl.AppUser(username="admin", role="ADMIN", provider="header")
+  else:
+    return None
+  
 @cl.on_chat_start
 async def on_chat_start():
+    app_user = cl.user_session.get("user")
     print("inside main")
     files = None
     # Wait for the user to upload a file
