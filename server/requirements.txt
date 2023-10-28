@@ -1,0 +1,22 @@
+# flask
+# python-dotenv
+# openai
+# langchain
+# pandas
+# numpy
+
+# pypdf2 
+# docx2txt 
+# faiss-cpu 
+# tiktoken
+
+# pymongo
+
+pypdf2
+langchain
+python-dotenv
+openai
+faiss-cpu
+huggingface_hub
+InstructorEmbedding
+sentence_transformers
