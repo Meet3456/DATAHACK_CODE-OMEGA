@@ -30,7 +30,7 @@ const SignUp = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Simple validation
@@ -52,16 +52,40 @@ const SignUp = () => {
       return;
     }
 
+    try{
+        const response = await fetch('/register-post',{
+            method:'POST',
+            headers:{
+                'Content-Type':'application/json',
+            },
+            body: JSON.stringify({
+                username: formData.username,
+                email: formData.email,
+                password: formData.password,
+              }),
+        });
+
+        if (response.ok) {
+            // Handle success, e.g., show a success message to the user
+            console.log('User registered successfully!');
+          } else {
+            // Handle errors, e.g., show an error message to the user
+            console.error('Registration failed');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+    }
+
     // If all fields are filled and passwords match, you can proceed with your logic
     // For example, you can use formData.username, formData.email, formData.password
 
-    // Clear the form data after submission (optional)
-    setFormData({
-      username: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-    });
+    // // Clear the form data after submission (optional)
+    // setFormData({
+    //   username: '',
+    //   email: '',
+    //   password: '',
+    //   confirmPassword: '',
+    // });
   };
 
   return (
