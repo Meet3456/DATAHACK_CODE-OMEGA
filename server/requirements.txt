@@ -10,4 +10,5 @@ InstructorEmbedding
 sentence_transformers
 tiktoken
 chainlit
-faiss
+flask
+pymongo
