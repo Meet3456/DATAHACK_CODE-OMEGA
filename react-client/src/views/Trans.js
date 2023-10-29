@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import Footer from "../Components/Footer";
 import Navbar from "../Components/Navbar";
+import bg from "../assets/card_back.jpg";
+
 const Trans = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedLanguage, setSelectedLanguage] = useState("");
@@ -43,9 +45,12 @@ const Trans = () => {
   };
 
   return (
-    <div className='flex flex-col min-h-screen'>
+    <div
+      className='flex flex-col min-h-screen'
+      style={{ backgroundImage: `url(${bg})` }}
+    >
       <Navbar />
-      <div className='max-w-md mx-auto mb-20 mt-20 p-4 bg-gray-800 text-white border rounded-lg shadow-lg'>
+      <div className='max-w-md mx-auto mb-20 mt-20 p-4 text-white bg-gray-500 border rounded-lg shadow-lg'>
         <h1 className='text-2xl font-semibold text-indigo-400 mb-4'>
           PDF Translation
         </h1>
