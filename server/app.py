@@ -168,6 +168,7 @@ def translatepost():
         filename = os.path.join(upload_path, pdf_file.filename)
         pdf_file.save(filename)
         return 'File saved successfully', 200
+        translate(upload_path, "output.pdf",)
     return 'No file uploaded', 400
 
 if __name__ == "__main__":

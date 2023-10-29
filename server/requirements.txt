@@ -19,4 +19,4 @@ huggingface
 pypdf2 
 pdfminer.six 
 PyMuPDF
-reportlab==3.5.68
+reportlab
