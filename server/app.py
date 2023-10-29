@@ -162,11 +162,14 @@ def loginpost():
 @app.route('/translate', methods=['POST'])
 def translatepost():
     pdf_file = request.files['pdf_file']
+    selected_language = request.form.get('selected_language')
     if pdf_file:
-        upload_path = os.path.join(app.root_path, 'uploads')
+        upload_path = os.path.join(app.root_path, 'database')
         os.makedirs(upload_path, exist_ok=True)  # Create the directory if it doesn't exist
         filename = os.path.join(upload_path, pdf_file.filename)
         pdf_file.save(filename)
+        print(upload_path)
+        print(selected_language)
         return 'File saved successfully', 200
     return 'No file uploaded', 400
 
