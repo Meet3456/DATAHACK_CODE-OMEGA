@@ -2,6 +2,8 @@
 import React, { useState } from "react";
 import "../index.css";
 import Footer from "../Components/Footer";
+import Navbar from "../Components/Navbar";
+
 const SignUp = () => {
   const [formData, setFormData] = useState({
     username: "",
@@ -98,6 +100,7 @@ const SignUp = () => {
 
   return (
     <div className='flex flex-col min-h-screen'>
+      <Navbar />
       <div className='flex justify-center items-center h-screen bg-gray-50 dark:bg-gray-900'>
         <form className='w-96 bg-white p-8 rounded shadow-md'>
           <h2 className='text-2xl font-bold mb-6 text-gray-900 text-dark text-center'>

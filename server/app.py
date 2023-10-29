@@ -18,10 +18,14 @@ from reportlab.platypus import SimpleDocTemplate, PageTemplate, BaseDocTemplate,
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from langdetect import detect
+import os
+os.environ['CURL_CA_BUNDLE'] = ''
 
-device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+device = torch.device(
+    'cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-def translate(in_pdf,out_pdf,lang, device= device):
+print(device)
+def translate(in_pdf, out_pdf, target_lang, device=device):
     def extract_text_from_pdf(file_path):
         reader = PdfReader(file_path)
         text = ""
@@ -30,25 +34,40 @@ def translate(in_pdf,out_pdf,lang, device= device):
         language = detect(text)
         return text, language
 
-    def translate_text(text, source_lang, target_lang= lang, device=device):
-        model = AutoModelForSeq2SeqLM.from_pretrained("facebook/nllb-200-distilled-600M")
+    def translate_text(text, source_lang, target_lang=target_lang, device=device):
+        model = AutoModelForSeq2SeqLM.from_pretrained(
+            "facebook/nllb-200-distilled-600M")
         model.to(device)
-        tokenizer = AutoTokenizer.from_pretrained("facebook/nllb-200-distilled-600M", src_lang = source_lang)
+        tokenizer = AutoTokenizer.from_pretrained(
+            "facebook/nllb-200-distilled-600M", src_lang=source_lang)
         inputs = tokenizer(text, return_tensors="pt")
         translated_tokens = model.generate(
-                inputs['input_ids'].to(device),
-                generation_config = GenerationConfig(max_new_tokens=200, num_beams=1)
-        )[0]
-        result = tokenizer.batch_decode(translated_tokens, skip_special_tokens=True)
+            inputs['input_ids'].to(device),
+            forced_bos_token_id=tokenizer.lang_code_to_id[target_lang], max_length=512
+        )
+
+        result = tokenizer.batch_decode(
+            translated_tokens, skip_special_tokens=True)[0]
+        
         print(result)
         return result
 
     def translate_pdf_to_english(file_path):
         text, language = extract_text_from_pdf(file_path)
         chunks = textwrap.wrap(text, width=1000)
+        if language == 'fr':
+            encoded_lang = 'fra_Latn'
+        elif language == 'es':
+            encoded_lang = 'spa_Latn'
+        elif language == 'de':
+            encoded_lang = 'deu_Latn'
+        elif language == 'hi':
+            encoded_lang = 'hin_Deva'
+        else :
+            encoded_lang = 'eng_Latn'
         translated_text = ""
         for chunk in chunks:
-            ' '.join(translate_text(chunk, source_lang= language, target_lang = 'eng_Latn'))
+            translated_text += translate_text(chunk, source_lang= encoded_lang, target_lang= target_lang)
         return translated_text
 
     def create_pdf(text, output_path):
@@ -64,7 +83,8 @@ def translate(in_pdf,out_pdf,lang, device= device):
 
         doc = MyDocTemplate(pdf_filename, pagesize=letter)
 
-        frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='normal')
+        frame = Frame(doc.leftMargin, doc.bottomMargin,
+                      doc.width, doc.height, id='normal')
         template = PageTemplate(id='test', frames=frame)
         doc.addPageTemplates([template])
 
@@ -88,9 +108,9 @@ def translate(in_pdf,out_pdf,lang, device= device):
         doc.build(story)
         print(f"PDF saved as {pdf_filename}")
 
-
     translated_text = translate_pdf_to_english(in_pdf)
     create_pdf(translated_text, out_pdf)
+
 
 load_dotenv()
 
@@ -159,20 +179,24 @@ def loginpost():
         response = {'success': False}
         return jsonify(response)
 
+
 @app.route('/translate', methods=['POST'])
 def translatepost():
     pdf_file = request.files['pdf_file']
     selected_language = request.form.get('selected_language')
     if pdf_file:
         upload_path = os.path.join(app.root_path, 'database')
-        os.makedirs(upload_path, exist_ok=True)  # Create the directory if it doesn't exist
+        # Create the directory if it doesn't exist
+        os.makedirs(upload_path, exist_ok=True)
         filename = os.path.join(upload_path, pdf_file.filename)
         pdf_file.save(filename)
         print(upload_path)
         print(selected_language)
+        translate(upload_path + "/" + pdf_file.filename,
+                  "output.pdf", target_lang = selected_language)
         return 'File saved successfully', 200
-        translate(upload_path, "output.pdf",)
     return 'No file uploaded', 400
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

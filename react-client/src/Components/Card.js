@@ -2,7 +2,7 @@ import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 const Card = (props) => {
   return (
-    <div className='max-w-xs   h-[400px] bg-gray-100 hover:bg-gray-200 shadow-lg rounded-lg pt-8 hover:transform hover:scale-105 transition-transform duration-300'>
+    <div className='max-w-xs   h-[400px] bg-gray-300 hover:bg-gray-400 shadow-lg rounded-lg pt-8 hover:transform hover:scale-105 transition-transform duration-300'>
       <h2 className='font-bold text-2xl  mb-10px text-center'>{props.head}</h2>
       <FontAwesomeIcon
         icon={props.icon}
