@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 const Trans = () => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [selectedLanguage, setSelectedLanguage] = useState('');
+    const [selectedModel, setSelectedModel] = useState('');
 
     const handleFileChange = (event) => {
         const file = event.target.files[0];
@@ -13,13 +14,30 @@ const Trans = () => {
         setSelectedLanguage(event.target.value);
     };
 
+    const handleModelChange = (event) => {
+        setSelectedModel(event.target.value);
+    };
+
     const translatePdf = () => {
-        if (selectedFile && selectedLanguage) {
-            // Implement PDF translation logic here
-            console.log(`Translate ${selectedFile.name} to ${selectedLanguage}`);
-            // You can send the file to the Flask route using fetch or Axios.
+        if (selectedFile && selectedLanguage && selectedModel) {
+            const formData = new FormData();
+            formData.append('pdf_file', selectedFile);
+            formData.append('selected_language', selectedLanguage);
+            formData.append('selected_model', selectedModel);
+
+            fetch('/translate', {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data); // You can handle the response from Flask here
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
         } else {
-            alert('Please select a file and a language for translation.');
+            alert('Please select a file, language, and model for translation.');
         }
     };
 
@@ -50,6 +68,21 @@ const Trans = () => {
                     <option value="fra_Latn">French</option>
                     <option value="deu_Latn">German</option>
                     <option value="hin_Deva">Hindi</option>
+                </select>
+            </div>
+
+            <div className="mb-6">
+                <label htmlFor="models" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Select a model</label>
+                <select
+                    id="models"
+                    onChange={handleModelChange}
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                >
+                    <option value="">Choose a Model</option>
+                    <option value="model1">Model 1</option>
+                    <option value="model2">Model 2</option>
+                    <option value="model3">Model 3</option>
+                    {/* Add more model options here */}
                 </select>
             </div>
 
